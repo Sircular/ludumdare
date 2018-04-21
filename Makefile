@@ -1,4 +1,4 @@
-SOURCES     = src/* lib/ assets/ LICENSE
+SOURCES     = src/* lib/ assets/ LICENSE conf.lua
 BUILD_DIR   = build
 OUTPUT_FILE = build.love
 
