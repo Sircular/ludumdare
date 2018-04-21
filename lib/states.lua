@@ -6,22 +6,22 @@ local Stateful = {
   exitOnEmpty = true,
 }
 
-Stateful.push = function(state)
+Stateful.push = function(state, ...)
   local st = Stateful._stateStack
 
-  if st[#st] then st[#st].pause() end
+  if st[#st] then st[#st].pause(...) end
   st[#st+1] = state
-  if st[#st] then st[#st].enter() end
+  if st[#st] then st[#st].enter(...) end
   Stateful._bootstrap(st[#st])
 end
 
-Stateful.pop = function()
+Stateful.pop = function(...)
   local st      = Stateful._stateStack
   local current = st[#st]
 
-  if st[#st] then st[#st].exit() end
+  if st[#st] then st[#st].exit(...) end
   st[#st] = nil
-  if st[#st] then st[#st].resume() end
+  if st[#st] then st[#st].resume(...) end
   Stateful._bootstrap(st[#st])
 
   return current
