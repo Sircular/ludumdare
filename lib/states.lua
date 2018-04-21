@@ -3,7 +3,7 @@
 
 local Stateful = {
   _stateStack = {},
-  exitOnEmpty = false,
+  exitOnEmpty = true,
 }
 
 Stateful.push = function(state)
@@ -16,18 +16,21 @@ Stateful.push = function(state)
 end
 
 Stateful.pop = function()
-  local st = Stateful._stateStack
+  local st      = Stateful._stateStack
+  local current = st[#st]
 
   if st[#st] then st[#st].exit() end
   st[#st] = nil
   if st[#st] then st[#st].resume() end
   Stateful._bootstrap(st[#st])
+
+  return current
 end
 
 Stateful._bootstrap = function(state)
   -- hacky way of getting these methods into love
   setmetatable(love, {__index = state})
-  setmetatable(love, {__index = (state and state.handlers or nil)})
+  setmetatable(love.handlers, {__index = (state and state.handlers or nil)})
 end
 
 return Stateful
