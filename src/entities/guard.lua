@@ -14,40 +14,51 @@ local viewFilter = function(other)
   end
 end
 
+Guard.static.pxSize         = 16
+Guard.static.seeDist        = 16*12
+Guard.static.hearDist       = 16*8
+Guard.static.moveSpeed      = 16*2
+Guard.static.calmSpeed      = 0.2
+Guard.static.suspThresh     = 0.6
+Guard.static.reassureThresh = 0.4
+Guard.static.alertThresh    = 1
+
+Guard.static.img = love.graphics.newImage("assets/img/guard.png")
+
+do
+  local grid = Anim8.newGrid(Guard.pxSize, Guard.pxSize, Guard.img:getDimensions())
+  Guard.static.animations = {
+    moving = {
+      up    = Anim8.newAnimation(grid(1, 1), 0.25),
+      right = Anim8.newAnimation(grid(2, 1), 0.25),
+      down  = Anim8.newAnimation(grid(1, 2), 0.25),
+      left  = Anim8.newAnimation(grid(2, 2), 0.25)
+    },
+    still = {
+      up    = Anim8.newAnimation(grid(1, 1), 0.25),
+      right = Anim8.newAnimation(grid(2, 1), 0.25),
+      down  = Anim8.newAnimation(grid(1, 2), 0.25),
+      left  = Anim8.newAnimation(grid(2, 2), 0.25)
+    }
+  }
+end
+
 function Guard:initialize(x, y, world, name)
-  self.pxSize    = 16
-  Entity.initialize(self, x, y, self.pxSize, self.pxSize)
+  Entity.initialize(self, x, y, Guard.pxSize, Guard.pxSize)
 
   self.direction = "right"
   self.world     = world
   self.name      = name
 
-  world:add(self, x, y, self.pxSize, self.pxSize)
+  world:add(self, x, y, Guard.pxSize, Guard.pxSize)
 
   self.suspicion        = 0
   self.instantSuspicion = 0
 
-  self.seeDist  = 16*12
-  self.hearDist = 16*8
-
-  self.moveSpeed = 16*2
-
-  self.calmSpeed = 0.2 -- per second
-
-  self.img = love.graphics.newImage("assets/img/guard.png")
-  self:_constructAnimations()
-end
-
-function Guard:_constructAnimations()
-  -- TODO: make this more flexible
-  local grid = Anim8.newGrid(self.pxSize, self.pxSize, self.img:getDimensions())
-
-  self.animations = {
-    ["up"]    = Anim8.newAnimation(grid(1, 1), 0.25),
-    ["right"] = Anim8.newAnimation(grid(2, 1), 0.25),
-    ["down"]  = Anim8.newAnimation(grid(1, 2), 0.25),
-    ["left"]  = Anim8.newAnimation(grid(2, 2), 0.25)
-  }
+  self.animations = Utils.recursiveClone(Guard.animations)
+  for k, v in ipairs(self.animations) do
+    print(k, v)
+  end
 end
 
 function Guard:_getCurrentViewVectors()
@@ -74,15 +85,19 @@ function Guard:_getIdealLookDirection(x, y)
 end
 
 function Guard:draw()
-  self.animations[self.direction]:draw(self.img, self.x, self.y)
+  self.animations["moving"][self.direction]:draw(Guard.img, self:getCornerPos())
 end
 
 function Guard:update(dt)
-  self.suspicion        = math.max(0, self.suspicion - (self.calmSpeed * dt))
+  self.suspicion        = math.max(0, self.suspicion - (Guard.calmSpeed * dt))
   self.suspicion        = self.suspicion + self.instantSuspicion * dt
   self.instantSuspicion = 0
+  if self.suspicion > Guard.alertThresh then
+    love.event.push("guardAlert")
+  end
 
-  local moveDist = self.moveSpeed * dt
+  local moveDist = (Guard.moveSpeed * dt) * (1 - self.suspicion)
+
   local xd = self.direction == "right" and moveDist or
       (self.direction == "left" and -moveDist or 0)
   local yd = self.direction == "up" and moveDist or
@@ -95,31 +110,32 @@ function Guard:update(dt)
   if #cols > 0 then
     if self.direction == "right" then self.direction = "left"
     elseif self.direction == "left" then self.direction = "right"
-    elseif self.direction == "up" then self.direction = "down" 
+    elseif self.direction == "up" then self.direction = "down"
     elseif self.direction == "down" then self.direction = "up" end
   end
+  self.animations["moving"][self.direction]:update(dt)
 end
 
-function Guard:reactToEvent(event, world)
+function Guard:reactToEvent(event)
   local suspFac
   if event.directional then
     -- it needs to be in our field of view
-    local _, len = world:querySegment(self.x, self.y, event.x, event.y, viewFilter)
+    local _, len = self.world:querySegment(self.x, self.y, event.x, event.y, viewFilter)
     if len > 0 then return end
 
     -- determine if it lies in our field of view
     local cx, cy = self:getCenterPos()
     local dx = event.x-cx
-    local dy = event.y-cy.y
+    local dy = event.y-cy
     if not Utils.vecBetween({dx, dy}, unpack(self:_getCurrentViewVectors())) then
       return
     end
 
     local dist = Utils.distance(self.x, self.y, event.x, event.y)
-    suspFac    = math.max(0, (self.seeDist-dist)/self.seeDist)
+    suspFac    = math.max(0, (Guard.seeDist-dist)/Guard.seeDist)
   else
     local dist = Utils.distance(self.x, self.y, event.x, event.y)
-    suspFac    = math.max(0, (self.hearDist-dist)/self.hearDist)
+    suspFac    = math.max(0, (Guard.hearDist-dist)/Guard.hearDist)
   end
   self.instantSuspicion = self.instantSuspicion + (suspFac * event.suspicion)
 end

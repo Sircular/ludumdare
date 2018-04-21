@@ -16,4 +16,18 @@ function Utils.cross2d(u, v)
   return (u[1]*v[2]) - (u[2]*v[1])
 end
 
+function Utils.recursiveClone(t)
+  local newT = {}
+  for k, v in pairs(t) do
+    local newV
+    if v.clone then
+      newV = v:clone()
+    elseif type(v) == "table" then
+      newV = Utils.recursiveClone(v)
+    end
+    newT[k] = newV
+  end
+  return newT
+end
+
 return Utils

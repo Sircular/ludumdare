@@ -25,6 +25,12 @@ function Map:initialize(path, world)
 
   self.tileBatch = love.graphics.newSpriteBatch(tileImg, 2048)
 
+  -- world borders
+  world:add({name="border-left"}, -1, 0, 1, self.height*self.tileSize)
+  world:add({name="border-right"}, self.width*self.tileSize, 0, 1, self.height*self.tileSize)
+  world:add({name="border-top"}, 0, -1, self.width*self.tileSize, 1)
+  world:add({name="border-bottom"}, 0, self.height*self.tileSize, self.width*self.tileSize, 1)
+
   for i = 1, #data.tiles do
     local x = (i-1)%self.width
     local y = ((i-1)-x)/self.width
