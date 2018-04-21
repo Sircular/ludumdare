@@ -27,6 +27,11 @@ Stateful.pop = function()
   return current
 end
 
+-- utility for extra bookkeeping stuff
+Stateful.newState = function()
+  return {handlers = {}}
+end
+
 Stateful._bootstrap = function(state)
   -- hacky way of getting these methods into love
   setmetatable(love, {__index = state})
