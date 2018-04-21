@@ -18,7 +18,7 @@ function Level.enter()
   cam:setPosition(0, 0)
 
   guards = {
-    Guard(32, 32)
+    Guard(32, 32, world, "guard-1")
   }
 end
 
@@ -39,7 +39,8 @@ function Level.draw()
 end
 
 function Level.mousemoved(x, y)
-  love.event.push("suspicious", {x, y}, true, 1)
+  -- love.event.push("suspicious", {cam:toWorld(x, y)}, false, 0.3)
+  love.event.push("suspicious", {cam:toWorld(x, y)}, true, 1)
 end
 
 function Level.handlers.suspicious(pos, directional, suspicion)

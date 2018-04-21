@@ -2,7 +2,9 @@ local Anim8 = require('lib/anim8')
 local Class = require('lib/middleclass')
 local Utils = require('utils')
 
-local Guard = Class('Guard')
+local Entity = require('entities/base')
+
+local Guard = Class('Guard', Entity)
 
 local viewFilter = function(other)
   if other.tileId then
@@ -12,21 +14,28 @@ local viewFilter = function(other)
   end
 end
 
-function Guard:initialize(x, y)
-  self.x                = x
-  self.y                = y
+function Guard:initialize(x, y, world, name)
+  self.pxSize    = 16
+  Entity.initialize(self, x, y, self.pxSize, self.pxSize)
+
+  self.direction = "right"
+  self.world     = world
+  self.name      = name
+
+  world:add(self, x, y, self.pxSize, self.pxSize)
+
   self.suspicion        = 0
   self.instantSuspicion = 0
 
-  self.seeDist  = 32*12
-  self.hearDist = 32*8
+  self.seeDist  = 16*12
+  self.hearDist = 16*8
+
+  self.moveSpeed = 16*2
 
   self.calmSpeed = 0.2 -- per second
 
-  self.pxSize = 16
-  self.img    = love.graphics.newImage("assets/img/guard.png")
+  self.img = love.graphics.newImage("assets/img/guard.png")
   self:_constructAnimations()
-  self.direction = "up"
 end
 
 function Guard:_constructAnimations()
@@ -66,13 +75,29 @@ end
 
 function Guard:draw()
   self.animations[self.direction]:draw(self.img, self.x, self.y)
-  love.graphics.print(self.suspicion, 0, 0)
 end
 
 function Guard:update(dt)
-  self.suspicion = math.max(0, self.suspicion - (self.calmSpeed * dt))
-  self.suspicion = self.suspicion + self.instantSuspicion * dt
+  self.suspicion        = math.max(0, self.suspicion - (self.calmSpeed * dt))
+  self.suspicion        = self.suspicion + self.instantSuspicion * dt
   self.instantSuspicion = 0
+
+  local moveDist = self.moveSpeed * dt
+  local xd = self.direction == "right" and moveDist or
+      (self.direction == "left" and -moveDist or 0)
+  local yd = self.direction == "up" and moveDist or
+      (self.direction == "down" and -moveDist or 0)
+
+  local newX, newY, cols = self.world:move(self, self.x + xd, self.y+yd)
+  self.x = newX
+  self.y = newY
+
+  if #cols > 0 then
+    if self.direction == "right" then self.direction = "left"
+    elseif self.direction == "left" then self.direction = "right"
+    elseif self.direction == "up" then self.direction = "down" 
+    elseif self.direction == "down" then self.direction = "up" end
+  end
 end
 
 function Guard:reactToEvent(event, world)
@@ -83,8 +108,9 @@ function Guard:reactToEvent(event, world)
     if len > 0 then return end
 
     -- determine if it lies in our field of view
-    local dx = event.x-self.x
-    local dy = event.y-self.y
+    local cx, cy = self:getCenterPos()
+    local dx = event.x-cx
+    local dy = event.y-cy.y
     if not Utils.vecBetween({dx, dy}, unpack(self:_getCurrentViewVectors())) then
       return
     end
