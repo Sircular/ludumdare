@@ -44,6 +44,8 @@ function Player:initialize(x, y, world, name)
   self.world:add(self, x, y, Player.pxSize, Player.pxSize)
 
   self.animations = Utils.recursiveClone(Player.animations)
+
+  self.soundTimer = 0
 end
 
 function Player:update(dt)
@@ -54,6 +56,15 @@ function Player:update(dt)
   down  = love.keyboard.isDown("down", "s")
 
   self.moving = left or right or up or down
+
+  if self.moving then
+    self.soundTimer = self.soundTimer + dt
+    if self.soundTimer >= 0.2 then
+      SndMgr.playSound("walk")
+      self.soundTimer = self.soundTimer - 0.2
+    end
+
+  end
 
   local dx = 0
   local dy = 0

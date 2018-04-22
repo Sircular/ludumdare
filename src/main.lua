@@ -8,10 +8,11 @@ function love.load()
   local font = love.graphics.newFont("assets/fonts/PressStart2P.ttf", 20)
   love.graphics.setFont(font)
 
-  SndMgr.loadSound("door_open", "assets/sound/door_open.wav")
-  SndMgr.loadSound("alert", "assets/sound/alarm.wav")
+  SndMgr.loadSound("door_open",  "assets/sound/door_open.wav")
+  SndMgr.loadSound("alert",      "assets/sound/alarm.wav")
   SndMgr.loadSound("block_push", "assets/sound/block_push.wav")
-  SndMgr.loadMusic("theme",     "assets/sound/theme.wav")
+  SndMgr.loadSound("walk",       "assets/sound/walk.wav")
+  SndMgr.loadMusic("theme",      "assets/sound/theme.wav")
 
   SndMgr.musicVolume = 0.7
 
