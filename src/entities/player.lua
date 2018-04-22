@@ -1,6 +1,7 @@
-local Anim8 = require('lib/anim8')
-local Class = require('lib/middleclass')
-local Utils = require('utils')
+local Anim8  = require('lib/anim8')
+local Class  = require('lib/middleclass')
+local Utils  = require('utils')
+local SndMgr = require('lib/sndmgr')
 
 local Entity = require('entities/base')
 
@@ -73,17 +74,23 @@ function Player:update(dt)
   local goalX = self.x + dx*dt*Player.moveSpeed
   local goalY = self.y + dy*dt*Player.moveSpeed
 
-  -- push a piece if there is one nearby
-  local items = self.world:queryRect(goalX, goalY, self.width, self.height)
-  for _, test in pairs(items) do
-    if test.type == "piece" then
-      test.requestMove(self.direction)
-      -- we're done here
+  local newX, newY, cols = self.world:move(self, goalX, goalY)
+  self.x = newX
+  self.y = newY
+
+  -- check for piece or door colisions
+  for _, c in pairs(cols) do
+    if c.other.type == "piece" then
+      if c.other.requestMove(self.direction) then
+        SndMgr.playSound("block_push")
+      end
       break
+    elseif c.other.type == "door" then
+      if c.other.isOpen then
+        love.event.push("levelComplete")
+      end
     end
   end
-
-  self.x, self.y = self.world:move(self, goalX, goalY)
 
   self:_getCurrentAnimation():update(dt)
 

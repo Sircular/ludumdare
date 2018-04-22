@@ -36,7 +36,7 @@ function SoundManager.playSound(name, volume, x, y)
   if (SoundManager.loadedSounds[name]) then
     local snd = SoundManager.loadedSounds[name]:clone()
     -- TODO: implement positional audio
-    snd:setRelative(true)
+    -- snd:setRelative(true)
     snd:setVolume(volume)
     snd:play()
   end

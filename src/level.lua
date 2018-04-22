@@ -9,28 +9,19 @@ local PS        = require('puzzlesystem')
 local Guard     = require('entities/guard')
 local Player    = require('entities/player')
 local Piece     = require('entities/piece')
+local Door      = require('entities/door')
 
 local Level = Stateful.newState()
 
-local world, map, cam, guards, player, puzzle, pieces
+local world, map, cam, guards, player, puzzle, pieces, door
 
-function Level.enter()
-  local mapData = MapLoader.load("test")
+function Level.enter(mapName)
+  local mapData = MapLoader.load(mapName)
   world         = Bump.newWorld()
   map           = Map:new(mapData, world)
   cam           = Gamera.new(0, 0, 20000, 20000)
   cam:setScale(2)
   cam:setPosition(0, 0)
-
-  -- puzzle = PS:new(128, 128, {
-  --   width  = 4,
-  --   height = 3,
-  --   tiles  = {
-  --     0, 1, 1, 0,
-  --     1, 1, 0, 1,
-  --     0, 1, 1, 1,
-  --   }
-  -- })
 
   puzzle = PS:new(mapData.puzzle.x, mapData.puzzle.y, mapData.puzzle)
 
@@ -44,10 +35,11 @@ function Level.enter()
           "guard"..tostring(#guards+1))
     elseif e.type == "piece" then
       pieces[#pieces+1] = Piece:new(e.x, e.y, e.id, world)
+    elseif e.type == "door" then
+      door = Door:new(e.x, e.y, world)
     end
   end
 
-  SndMgr.loadMusic("theme", "assets/sound/theme.wav")
   SndMgr.playMusic("theme")
 end
 
@@ -65,6 +57,7 @@ function Level.draw()
   cam:draw(function()
     map:draw()
     puzzle:draw()
+    door:draw()
     for _, g in ipairs(guards) do
       g:draw()
     end
@@ -91,11 +84,16 @@ end
 
 function Level.handlers.pieceMoved()
   if puzzle:isSolved(pieces) then
-    Stateful.pop()
+    door:setOpen(true)
+    SndMgr.playSound("door_open")
   end
 end
 
 function Level.handlers.guardAlert()
+  Stateful.pop()
+end
+
+function Level.handlers.levelComplete()
   Stateful.pop()
 end
 

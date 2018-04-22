@@ -16,7 +16,7 @@ function MainMenu.enter()
 
   buttons = {
     Button:new("Play", 0, 0, nil, nil, function()
-      Stateful.push(require('level'))
+      Stateful.push(require('level'), "1")
     end),
     Button:new("Exit", 0, 0, nil, nil, love.event.quit)
   }
