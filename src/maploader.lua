@@ -1,10 +1,10 @@
 local MapLoader = {}
 
-local formatStr = "maps/%s.lua"
+local formatStr = "maps/%s"
 
 function MapLoader.load(name)
   local path = string.format(formatStr, name)
-  return dofile(path)
+  return require(path)
 end
 
 return MapLoader
