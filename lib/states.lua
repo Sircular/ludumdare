@@ -46,13 +46,15 @@ end
 -- utility for extra bookkeeping stuff
 Stateful.newState = function()
   local empty = function() end
-  return {
+  local state = {
     enter    = empty,
     exit     = empty,
     pause    = empty,
     resume   = empty,
     handlers = {}
   }
+  setmetatable(state.handlers, {__index = function() return function() end end})
+  return state
 end
 
 Stateful._bootstrap = function(state)
