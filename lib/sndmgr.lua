@@ -1,4 +1,4 @@
-local Tweens = require('lib/tweens')
+local Tweens = require('lib/tween')
 
 local SoundManager = {
   loadedSounds = {},
@@ -43,6 +43,9 @@ function SoundManager.playSound(name, volume, x, y)
 end
 
 function SoundManager.playMusic(name)
+  if SoundManager.loadedMusic[name] == SoundManager.currentTrack then
+    return
+  end
   SoundManager.nextTrack = SoundManager.loadedMusic[name]
   SoundManager.fading = true
   -- start the track
@@ -70,6 +73,8 @@ function SoundManager.playMusic(name)
 
 end
 
-
+function SoundManager.update(dt)
+  SoundManager.tweens:update(dt)
+end
 
 return SoundManager
