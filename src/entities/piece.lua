@@ -101,7 +101,7 @@ function Piece:tryMove(direction)
     -- we want to ignore collisions with ourself, since we will be resolving
     -- those later when everything gets moved around
     local _, _, _, count = self.world:check(b, goalX, goalY,
-    function(other)
+    function(_, other)
       if other.type == "piece" and other.parent == self then
         return nil
       else
