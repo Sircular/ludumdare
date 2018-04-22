@@ -38,9 +38,9 @@ Stateful.pop = function(...)
   return current
 end
 
-Stateful.reset = function()
+Stateful.reset = function(...)
   local st = Stateful._stateStack
-  if st[#st] then st[#st].enter() end
+  if st[#st] then st[#st].enter(...) end
 end
 
 -- utility for extra bookkeeping stuff

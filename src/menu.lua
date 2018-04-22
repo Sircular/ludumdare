@@ -9,14 +9,18 @@ local bgColor, titleImg, buttons
 
 local buttonSpacing = 48
 
+local level
+
 function MainMenu.enter()
   bgColor = {.271, .157, .235}
   titleImg = love.graphics.newImage("assets/img/titlepage.png")
   SndMgr.playMusic(nil)
 
+  level = require('level')
+
   buttons = {
     Button:new("Play", 0, 0, nil, nil, function()
-      Stateful.push(require('level'), "1")
+      Stateful.push(level, 1)
     end),
     Button:new("Exit", 0, 0, nil, nil, love.event.quit)
   }
