@@ -22,15 +22,17 @@ function Level.enter()
   cam:setScale(2)
   cam:setPosition(0, 0)
 
-  puzzle = PS:new(128, 128, {
-    width  = 4,
-    height = 3,
-    tiles  = {
-      0, 1, 1, 0,
-      1, 1, 0, 1,
-      0, 1, 1, 1,
-    }
-  })
+  -- puzzle = PS:new(128, 128, {
+  --   width  = 4,
+  --   height = 3,
+  --   tiles  = {
+  --     0, 1, 1, 0,
+  --     1, 1, 0, 1,
+  --     0, 1, 1, 1,
+  --   }
+  -- })
+
+  puzzle = PS:new(mapData.puzzle.x, mapData.puzzle.y, mapData.puzzle)
 
   guards = {}
   pieces = {}
@@ -41,7 +43,7 @@ function Level.enter()
       guards[#guards+1] = Guard:new(e.x, e.y, world,
           "guard"..tostring(#guards+1))
     elseif e.type == "piece" then
-      pieces[#pieces+1] = Piece:new(e.x, e.y, e.pieceId, world)
+      pieces[#pieces+1] = Piece:new(e.x, e.y, e.id, world)
     end
   end
 

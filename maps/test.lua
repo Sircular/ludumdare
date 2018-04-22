@@ -16,11 +16,46 @@ return {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   },
+  puzzle = {
+    x = 128,
+    y = 128,
+    width = 4,
+    height = 3,
+    tiles = {
+      0, 1, 1, 0,
+      1, 1, 0, 1,
+      0, 1, 1, 1,
+    }
+  },
   entities = {
     {
       type = "player",
       x    = 0,
       y    = 0,
-    }
+    },
+    {
+      type = "piece",
+      x    = 64,
+      y    = 64,
+      id   = 3
+    },
+    {
+      type = "piece",
+      x = 96,
+      y = 96,
+      id = 2
+    },
+    {
+      type = "piece",
+      x = 96,
+      y = 112,
+      id = 2
+    },
+    {
+      type = "piece",
+      x = 96,
+      y = 128,
+      id = 2
+    },
   }
 }
