@@ -4,9 +4,7 @@ local Utils = require('utils')
 local Map = Class('Map')
 
 -- includes a bump world that requires entities
-function Map:initialize(path, world)
-  local data = dofile(path)
-
+function Map:initialize(data, world)
   -- in tiles
   self.width    = data.width
   self.height   = data.height

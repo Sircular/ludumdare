@@ -3,28 +3,24 @@ local Gamera   = require('lib/gamera')
 local Stateful = require('lib/states')
 local SndMgr   = require('lib/sndmgr')
 
-local Map    = require('map')
-local PS     = require('puzzlesystem')
-local Guard  = require('entities/guard')
-local Player = require('entities/player')
-local Piece  = require('entities/piece')
+local MapLoader = require('maploader')
+local Map       = require('map')
+local PS        = require('puzzlesystem')
+local Guard     = require('entities/guard')
+local Player    = require('entities/player')
+local Piece     = require('entities/piece')
 
 local Level = Stateful.newState()
 
 local world, map, cam, guards, player, puzzle, pieces
 
 function Level.enter()
-  world = Bump.newWorld()
-  map   = Map:new("maps/test.lua", world)
-  cam   = Gamera.new(0, 0, 20000, 20000)
+  local mapData = MapLoader.load("test")
+  world         = Bump.newWorld()
+  map           = Map:new(mapData, world)
+  cam           = Gamera.new(0, 0, 20000, 20000)
   cam:setScale(2)
   cam:setPosition(0, 0)
-
-  player = Player:new(128, 64, world, "player")
-
-  guards = {
-    Guard(32, 32, world, "guard-1")
-  }
 
   puzzle = PS:new(128, 128, {
     width  = 4,
@@ -36,11 +32,18 @@ function Level.enter()
     }
   })
 
-  pieces = {
-    Piece:new(128, 96, 3, world),
-  }
-
-  print(puzzle:isSolved(pieces))
+  guards = {}
+  pieces = {}
+  for _, e in pairs(mapData.entities) do
+    if e.type == "player" then
+      player = Player:new(e.x, e.y, world, "player")
+    elseif e.type == "guard" then
+      guards[#guards+1] = Guard:new(e.x, e.y, world,
+          "guard"..tostring(#guards+1))
+    elseif e.type == "piece" then
+      pieces[#pieces+1] = Piece:new(e.x, e.y, e.pieceId, world)
+    end
+  end
 
   SndMgr.loadMusic("theme", "assets/sound/theme.wav")
   SndMgr.playMusic("theme")
