@@ -1,5 +1,4 @@
 local Bump     = require('lib/bump')
-local Gamera   = require('lib/gamera')
 local Stateful = require('lib/states')
 local SndMgr   = require('lib/sndmgr')
 
@@ -13,15 +12,18 @@ local Door      = require('entities/door')
 
 local Level = Stateful.newState()
 
-local world, map, cam, guards, player, puzzle, pieces, door
+-- local maps = {"1", "2", "3", "4"}
+local maps = {"4"}
 
-function Level.enter(mapName)
+local index
+local world, map, guards, player, puzzle, pieces, door, canvas
+
+function Level.enter(mapIndex)
+  index = mapIndex
+  local mapName = maps[mapIndex]
   local mapData = MapLoader.load(mapName)
   world         = Bump.newWorld()
   map           = Map:new(mapData, world)
-  cam           = Gamera.new(0, 0, 20000, 20000)
-  cam:setScale(2)
-  cam:setPosition(0, 0)
 
   puzzle = PS:new(mapData.puzzle.x, mapData.puzzle.y, mapData.puzzle)
 
@@ -32,7 +34,7 @@ function Level.enter(mapName)
       player = Player:new(e.x, e.y, world, "player")
     elseif e.type == "guard" then
       guards[#guards+1] = Guard:new(e.x, e.y, world,
-          "guard"..tostring(#guards+1))
+          "guard"..tostring(#guards+1), e.direction)
     elseif e.type == "piece" then
       pieces[#pieces+1] = Piece:new(e.x, e.y, e.id, world)
     elseif e.type == "door" then
@@ -40,12 +42,13 @@ function Level.enter(mapName)
     end
   end
 
+  canvas = love.graphics.newCanvas(map.width * map.tileSize, map.height * map.tileSize)
+
   SndMgr.playMusic("theme")
 end
 
 function Level.update(dt)
   player:update(dt)
-  cam:setPosition(player:getCenterPos())
   for _, g in ipairs(guards) do
     g:update(dt)
   end
@@ -54,18 +57,23 @@ function Level.update(dt)
 end
 
 function Level.draw()
-  cam:draw(function()
-    map:draw()
-    puzzle:draw()
-    door:draw()
-    for _, g in ipairs(guards) do
-      g:draw()
-    end
-    for _, p in pairs(pieces) do
-      p:draw()
-    end
-    player:draw()
-  end)
+  love.graphics.setCanvas(canvas)
+  map:draw()
+  puzzle:draw()
+  door:draw()
+  for _, g in ipairs(guards) do
+    g:draw()
+  end
+  for _, p in pairs(pieces) do
+    p:draw()
+  end
+  player:draw()
+  love.graphics.setCanvas()
+
+  local centerX = love.graphics.getWidth()/2
+  local centerY = love.graphics.getHeight()/2
+  love.graphics.draw(canvas, centerX - canvas:getWidth(),
+      centerY-canvas:getHeight(), 0, 2, 2)
 end
 
 function Level.handlers.suspicious(pos, directional, suspicion)
@@ -90,11 +98,15 @@ function Level.handlers.pieceMoved()
 end
 
 function Level.handlers.guardAlert()
-  Stateful.pop()
+  Stateful.swap(require('lose'))
 end
 
 function Level.handlers.levelComplete()
-  Stateful.pop()
+  if (index == #maps) then
+    Stateful.swap(require('win'))
+  else
+    Stateful.reset(index + 1)
+  end
 end
 
 return Level
