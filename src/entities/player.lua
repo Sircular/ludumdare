@@ -7,8 +7,9 @@ local Entity = require('entities/base')
 
 local Player = Class('Player', Entity)
 
-Player.static.pxSize = 16
+Player.static.pxSize    = 16
 Player.static.moveSpeed = 16*4
+Player.static.shrink           = 1
 
 Player.static.animTime = 0.1
 
@@ -41,7 +42,8 @@ function Player:initialize(x, y, world, name)
 
   self.moving = false
 
-  self.world:add(self, x, y, Player.pxSize, Player.pxSize)
+  self.world:add(self, x+Player.shrink, y+Player.shrink,
+      Player.pxSize-(Player.shrink*2), Player.pxSize-(Player.shrink*2))
 
   self.animations = Utils.recursiveClone(Player.animations)
 
@@ -82,12 +84,12 @@ function Player:update(dt)
     dy = 1
   end
 
-  local goalX = self.x + dx*dt*Player.moveSpeed
-  local goalY = self.y + dy*dt*Player.moveSpeed
+  local goalX = self.x + Player.shrink + dx*dt*Player.moveSpeed
+  local goalY = self.y + Player.shrink + dy*dt*Player.moveSpeed
 
   local newX, newY, cols = self.world:move(self, goalX, goalY)
-  self.x = newX
-  self.y = newY
+  self.x = newX - Player.shrink
+  self.y = newY - Player.shrink
 
   -- check for piece or door colisions
   for _, c in pairs(cols) do
