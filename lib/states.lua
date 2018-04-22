@@ -15,12 +15,23 @@ Stateful.push = function(state, ...)
   Stateful._bootstrap(st[#st])
 end
 
+Stateful.swap = function(state, ...)
+  local st = Stateful._stateStack
+  if st[#st] then st[#st].exit(...) end
+  st[#st] = state
+  if state then st[#st].enter(...) end
+  Stateful._bootstrap(state)
+end
+
 Stateful.pop = function(...)
   local st      = Stateful._stateStack
   local current = st[#st]
 
   if st[#st] then st[#st].exit(...) end
   st[#st] = nil
+  if #st == 0 and Stateful.exitOnEmpty then
+    love.event.quit()
+  end
   if st[#st] then st[#st].resume(...) end
   Stateful._bootstrap(st[#st])
 
@@ -29,13 +40,19 @@ end
 
 Stateful.reset = function()
   local st = Stateful._stateStack
-
   if st[#st] then st[#st].enter() end
 end
 
 -- utility for extra bookkeeping stuff
 Stateful.newState = function()
-  return {handlers = {}}
+  local empty = function() end
+  return {
+    enter    = empty,
+    exit     = empty,
+    pause    = empty,
+    resume   = empty,
+    handlers = {}
+  }
 end
 
 Stateful._bootstrap = function(state)
