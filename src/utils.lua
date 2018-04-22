@@ -30,4 +30,15 @@ function Utils.recursiveClone(t)
   return newT
 end
 
+function Utils.makeTileQuads(w, h, imgW, imgH)
+  local quads = {}
+  for y = 0, math.floor(imgH/h)-1 do
+    for x = 0, math.floor(imgW/w) do
+      quads[#quads+1] = love.graphics.newQuad(x*w, y*h, w, h, imgW, imgH)
+    end
+  end
+
+  return quads
+end
+
 return Utils
