@@ -9,22 +9,24 @@ local Player = Class('Player', Entity)
 Player.static.pxSize = 16
 Player.static.moveSpeed = 16*4
 
+Player.static.animTime = 0.1
+
 Player.static.img = love.graphics.newImage("assets/img/player.png")
 
 do
   local grid = Anim8.newGrid(Player.pxSize, Player.pxSize, Player.img:getDimensions())
   Player.static.animations = {
     ["moving"] = {
-      ["up"]    = Anim8.newAnimation(grid(1, 1), 0.25),
-      ["right"] = Anim8.newAnimation(grid(2, 1), 0.25),
-      ["down"]  = Anim8.newAnimation(grid(1, 2), 0.25),
-      ["left"]  = Anim8.newAnimation(grid(2, 2), 0.25)
+      ["up"]    = Anim8.newAnimation(grid('1-4', 1), Player.animTime),
+      ["right"] = Anim8.newAnimation(grid('1-4', 2), Player.animTime),
+      ["down"]  = Anim8.newAnimation(grid('1-4', 3), Player.animTime),
+      ["left"]  = Anim8.newAnimation(grid('1-4', 4), Player.animTime)
     },
     ["still"] = {
-      ["up"]    = Anim8.newAnimation(grid(1, 1), 0.25),
-      ["right"] = Anim8.newAnimation(grid(2, 1), 0.25),
-      ["down"]  = Anim8.newAnimation(grid(1, 2), 0.25),
-      ["left"]  = Anim8.newAnimation(grid(2, 2), 0.25)
+      ["up"]    = Anim8.newAnimation(grid(1, 1), Player.animTime),
+      ["right"] = Anim8.newAnimation(grid(1, 2), Player.animTime),
+      ["down"]  = Anim8.newAnimation(grid(1, 3), Player.animTime),
+      ["left"]  = Anim8.newAnimation(grid(1, 4), Player.animTime)
     }
   }
 end
@@ -68,10 +70,20 @@ function Player:update(dt)
     dy = 1
   end
 
-  self.x, self.y = self.world:move(self, self.x + dx*dt*Player.moveSpeed,
-        self.y + dy*dt*Player.moveSpeed)
+  local goalX = self.x + dx*dt*Player.moveSpeed
+  local goalY = self.y + dy*dt*Player.moveSpeed
 
-  local state = self.moving and "moving" or "still"
+  -- push a piece if there is one nearby
+  local items = self.world:queryRect(goalX, goalY, self.width, self.height)
+  for _, test in pairs(items) do
+    if test.type == "piece" then
+      test.requestMove(self.direction)
+    end
+  end
+
+  self.x, self.y = self.world:move(self, goalX, goalY)
+
+  self:_getCurrentAnimation():update(dt)
 
   -- hey look at me! I'm conspicuous
   -- push "suspicious" events
@@ -81,9 +93,13 @@ function Player:update(dt)
   end
 end
 
-function Player:draw()
+function Player:_getCurrentAnimation()
   local state = self.moving and "moving" or "still"
-  Player.animations[state][self.direction]:draw(Player.img, self:getCornerPos())
+  return self.animations[state][self.direction]
+end
+
+function Player:draw()
+  self:_getCurrentAnimation():draw(Player.img, self:getCornerPos())
 end
 
 return Player

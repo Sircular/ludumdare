@@ -1,14 +1,17 @@
-local Bump   = require('lib/bump')
-local Gamera = require('lib/gamera')
+local Bump     = require('lib/bump')
+local Gamera   = require('lib/gamera')
 local Stateful = require('lib/states')
+local SndMgr   = require('lib/sndmgr')
 
 local Map    = require('map')
+local PS     = require('puzzlesystem')
 local Guard  = require('entities/guard')
 local Player = require('entities/player')
+local Piece  = require('entities/piece')
 
 local Level = Stateful.newState()
 
-local world, map, cam, guards, player
+local world, map, cam, guards, player, puzzle, pieces
 
 function Level.enter()
   world = Bump.newWorld()
@@ -22,6 +25,25 @@ function Level.enter()
   guards = {
     Guard(32, 32, world, "guard-1")
   }
+
+  puzzle = PS:new(128, 128, {
+    width  = 4,
+    height = 3,
+    tiles  = {
+      0, 1, 1, 0,
+      1, 1, 0, 1,
+      0, 1, 1, 1,
+    }
+  })
+
+  pieces = {
+    Piece:new(128, 96, 3, world),
+  }
+
+  print(puzzle:isSolved(pieces))
+
+  SndMgr.loadMusic("theme", "assets/sound/theme.wav")
+  SndMgr.playMusic("theme")
 end
 
 function Level.update(dt)
@@ -30,13 +52,19 @@ function Level.update(dt)
   for _, g in ipairs(guards) do
     g:update(dt)
   end
+
+  SndMgr.update(dt)
 end
 
 function Level.draw()
   cam:draw(function()
     map:draw()
+    puzzle:draw()
     for _, g in ipairs(guards) do
       g:draw()
+    end
+    for _, p in pairs(pieces) do
+      p:draw()
     end
     player:draw()
   end)
@@ -47,11 +75,18 @@ function Level.handlers.suspicious(pos, directional, suspicion)
     x           = pos[1],
     y           = pos[2],
     directional = directional,
-    suspicion   = suspicion
+    suspicion   = suspicion,
+    time        = love.timer.getTime(),
   }
 
   for _, g in ipairs(guards) do
     g:reactToEvent(event, world)
+  end
+end
+
+function Level.handlers.pieceMoved()
+  if puzzle:isSolved(pieces) then
+    Stateful.pop()
   end
 end
 
