@@ -1,6 +1,7 @@
 local Bump     = require('lib/bump')
 local Stateful = require('lib/states')
 local SndMgr   = require('lib/sndmgr')
+local Slice9   = require('lib/slice9')
 
 local MapLoader = require('maploader')
 local Map       = require('map')
@@ -15,7 +16,7 @@ local Level = Stateful.newState()
 local maps = {"1", "2", "3", "4", "5"}
 
 local index
-local world, map, guards, player, puzzle, pieces, door, canvas
+local world, map, guards, player, puzzle, pieces, door, canvas, border
 
 function Level.enter(mapIndex)
   index = mapIndex
@@ -42,6 +43,9 @@ function Level.enter(mapIndex)
   end
 
   canvas = love.graphics.newCanvas(map.width * map.tileSize, map.height * map.tileSize)
+
+  local borderImg = love.graphics.newImage("assets/img/border.png")
+  border = Slice9:new(borderImg, 8, 8, 8, 8, 0)
 
   SndMgr.playMusic("theme")
 end
@@ -73,6 +77,9 @@ function Level.draw()
   local centerY = love.graphics.getHeight()/2
   love.graphics.draw(canvas, centerX - canvas:getWidth(),
       centerY-canvas:getHeight(), 0, 2, 2)
+
+  border:draw(centerX-canvas:getWidth(), centerY-canvas:getHeight(),
+      canvas:getWidth()*2, canvas:getHeight()*2, 2)
 end
 
 function Level.handlers.suspicious(pos, directional, suspicion)
