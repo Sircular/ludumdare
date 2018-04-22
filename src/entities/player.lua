@@ -78,6 +78,8 @@ function Player:update(dt)
   for _, test in pairs(items) do
     if test.type == "piece" then
       test.requestMove(self.direction)
+      -- we're done here
+      break
     end
   end
 
