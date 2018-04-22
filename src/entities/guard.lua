@@ -16,7 +16,7 @@ end
 
 Guard.static.pxSize         = 16
 Guard.static.seeDist        = 16*12
-Guard.static.hearDist       = 16*8
+Guard.static.hearDist       = 16*5
 Guard.static.moveSpeed      = 16*2
 Guard.static.calmSpeed      = 0.2
 Guard.static.suspThresh     = 0.6
@@ -45,10 +45,10 @@ do
   }
 end
 
-function Guard:initialize(x, y, world, name)
+function Guard:initialize(x, y, world, name, direction)
   Entity.initialize(self, x, y, Guard.pxSize, Guard.pxSize)
 
-  self.direction = "right"
+  self.direction = direction or "right"
   self.facing    = self.direction
   self.world     = world
   self.name      = name
@@ -116,8 +116,8 @@ function Guard:update(dt)
     local moveDist = (Guard.moveSpeed * dt)
     local xd = self.direction == "right" and moveDist or
         (self.direction == "left" and -moveDist or 0)
-    local yd = self.direction == "up" and moveDist or
-        (self.direction == "down" and -moveDist or 0)
+    local yd = self.direction == "up" and -moveDist or
+        (self.direction == "down" and moveDist or 0)
 
     local newX, newY, cols = self.world:move(self, self.x + xd, self.y+yd)
     self.x = newX
