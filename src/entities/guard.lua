@@ -23,22 +23,24 @@ Guard.static.suspThresh     = 0.6
 Guard.static.reassureThresh = 0.4
 Guard.static.alertThresh    = 1
 
+Guard.static.animTime = 0.2
+
 Guard.static.img = love.graphics.newImage("assets/img/guard.png")
 
 do
   local grid = Anim8.newGrid(Guard.pxSize, Guard.pxSize, Guard.img:getDimensions())
   Guard.static.animations = {
-    moving = {
-      up    = Anim8.newAnimation(grid(1, 1), 0.25),
-      right = Anim8.newAnimation(grid(2, 1), 0.25),
-      down  = Anim8.newAnimation(grid(1, 2), 0.25),
-      left  = Anim8.newAnimation(grid(2, 2), 0.25)
+    ["moving"] = {
+      ["up"]    = Anim8.newAnimation(grid('1-4', 1), Guard.animTime),
+      ["right"] = Anim8.newAnimation(grid('1-4', 2), Guard.animTime),
+      ["down"]  = Anim8.newAnimation(grid('1-4', 3), Guard.animTime),
+      ["left"]  = Anim8.newAnimation(grid('1-4', 4), Guard.animTime)
     },
-    still = {
-      up    = Anim8.newAnimation(grid(1, 1), 0.25),
-      right = Anim8.newAnimation(grid(2, 1), 0.25),
-      down  = Anim8.newAnimation(grid(1, 2), 0.25),
-      left  = Anim8.newAnimation(grid(2, 2), 0.25)
+    ["still"] = {
+      ["up"]    = Anim8.newAnimation(grid(1, 1), Guard.animTime),
+      ["right"] = Anim8.newAnimation(grid(1, 2), Guard.animTime),
+      ["down"]  = Anim8.newAnimation(grid(1, 3), Guard.animTime),
+      ["left"]  = Anim8.newAnimation(grid(1, 4), Guard.animTime)
     }
   }
 end
@@ -47,11 +49,13 @@ function Guard:initialize(x, y, world, name)
   Entity.initialize(self, x, y, Guard.pxSize, Guard.pxSize)
 
   self.direction = "right"
+  self.facing    = self.direction
   self.world     = world
   self.name      = name
 
   world:add(self, x, y, Guard.pxSize, Guard.pxSize)
 
+  self.isSuspicious     = false
   self.suspicion        = 0
   self.instantSuspicion = 0
 
@@ -59,9 +63,11 @@ function Guard:initialize(x, y, world, name)
   for k, v in ipairs(self.animations) do
     print(k, v)
   end
+
+  self.recentSuspEvent = nil
 end
 
-function Guard:_getCurrentViewVectors()
+function Guard._getViewVectors(direction)
   local rawVecs = {
     {-1, -1}, {1, -1}, {1, 1}, {-1, 1}
   }
@@ -70,7 +76,7 @@ function Guard:_getCurrentViewVectors()
     ["right"] = {rawVecs[2], rawVecs[3]},
     ["down"] = {rawVecs[3], rawVecs[4]},
     ["left"] = {rawVecs[4], rawVecs[1]},
-  })[self.direction]
+  })[direction]
 end
 
 function Guard:_getIdealLookDirection(x, y)
@@ -85,7 +91,8 @@ function Guard:_getIdealLookDirection(x, y)
 end
 
 function Guard:draw()
-  self.animations["moving"][self.direction]:draw(Guard.img, self:getCornerPos())
+  local state = self.isSuspicious and "still" or "moving"
+  self.animations[state][self.facing]:draw(Guard.img, self:getCornerPos())
 end
 
 function Guard:update(dt)
@@ -94,26 +101,37 @@ function Guard:update(dt)
   self.instantSuspicion = 0
   if self.suspicion > Guard.alertThresh then
     love.event.push("guardAlert")
+  elseif self.suspicion > Guard.suspThresh then
+    self.isSuspicious = true
+  elseif self.suspicion <= Guard.reassureThresh then
+    self.isSuspicious = false
   end
 
-  local moveDist = (Guard.moveSpeed * dt) * (1 - self.suspicion)
+  if self.isSuspicious then
+    -- turn to face the suspicious event
+    local ev = self.recentSuspEvent
+    self.facing = self:_getIdealLookDirection(ev.x, ev.y)
+  else
+    -- travel
+    local moveDist = (Guard.moveSpeed * dt)
+    local xd = self.direction == "right" and moveDist or
+        (self.direction == "left" and -moveDist or 0)
+    local yd = self.direction == "up" and moveDist or
+        (self.direction == "down" and -moveDist or 0)
 
-  local xd = self.direction == "right" and moveDist or
-      (self.direction == "left" and -moveDist or 0)
-  local yd = self.direction == "up" and moveDist or
-      (self.direction == "down" and -moveDist or 0)
-
-  local newX, newY, cols = self.world:move(self, self.x + xd, self.y+yd)
-  self.x = newX
-  self.y = newY
-
-  if #cols > 0 then
-    if self.direction == "right" then self.direction = "left"
-    elseif self.direction == "left" then self.direction = "right"
-    elseif self.direction == "up" then self.direction = "down"
-    elseif self.direction == "down" then self.direction = "up" end
+    local newX, newY, cols = self.world:move(self, self.x + xd, self.y+yd)
+    self.x = newX
+    self.y = newY
+    if #cols > 0 then
+      if self.direction == "right" then self.direction = "left"
+      elseif self.direction == "left" then self.direction = "right"
+      elseif self.direction == "up" then self.direction = "down"
+      elseif self.direction == "down" then self.direction = "up" end
+    end
+    self.facing = self.direction
+    self.animations["moving"][self.direction]:update(dt)
   end
-  self.animations["moving"][self.direction]:update(dt)
+
 end
 
 function Guard:reactToEvent(event)
@@ -127,7 +145,7 @@ function Guard:reactToEvent(event)
     local cx, cy = self:getCenterPos()
     local dx = event.x-cx
     local dy = event.y-cy
-    if not Utils.vecBetween({dx, dy}, unpack(self:_getCurrentViewVectors())) then
+    if not Utils.vecBetween({dx, dy}, unpack(Guard._getViewVectors(self.facing))) then
       return
     end
 
@@ -138,6 +156,15 @@ function Guard:reactToEvent(event)
     suspFac    = math.max(0, (Guard.hearDist-dist)/Guard.hearDist)
   end
   self.instantSuspicion = self.instantSuspicion + (suspFac * event.suspicion)
+
+  -- store it for later use
+  -- we know that if it gets to this point, it has been registered
+  event.calculatedSusp = suspFac*event.suspicion
+  if not self.recentSuspEvent or
+    event.calculatedSusp > self.recentSuspEvent.calculatedSusp
+    or event.time - self.recentSuspEvent.time >= 1 then
+    self.recentSuspEvent = event
+  end
 end
 
 return Guard
