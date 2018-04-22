@@ -13,7 +13,7 @@ run: organize
 	love $(BUILD_DIR)
 
 package: organize
-	cd $(BUILD_DIR) && love-release -p "$(PACKAGE)" -a "$(AUTHOR)" -d "$(DESC)" -t "$(TITLE)" -e "$(EMAIL)" -W 32 -D
+	cd $(BUILD_DIR) && love-release -p "$(PACKAGE)" -a "$(AUTHOR)" -d "$(DESC)" -t "$(TITLE)" -e "$(EMAIL)" -W 32 -M
 
 organize: $(SOURCES)
 	mkdir -p $(BUILD_DIR)
