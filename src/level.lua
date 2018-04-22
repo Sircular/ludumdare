@@ -90,8 +90,9 @@ function Level.handlers.suspicious(pos, directional, suspicion)
 end
 
 function Level.handlers.pieceMoved()
-  if puzzle:isSolved(pieces) then
-    door:setOpen(true)
+  local solved = puzzle:isSolved(pieces)
+  door:setOpen(solved)
+  if solved then
     SndMgr.playSound("door_open")
   end
 end
