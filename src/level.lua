@@ -14,6 +14,7 @@ local Door      = require('entities/door')
 local Level = Stateful.newState()
 
 local maps = {"1", "2", "3", "4", "5"}
+local bgColor = {.271, .157, .235}
 
 local index
 local world, map, guards, player, puzzle, pieces, door, canvas, border
@@ -60,6 +61,10 @@ function Level.update(dt)
 end
 
 function Level.draw()
+  love.graphics.setColor(unpack(bgColor))
+  love.graphics.rectangle("fill", 0, 0, love.graphics.getDimensions())
+  love.graphics.setColor(1, 1, 1)
+
   love.graphics.setCanvas(canvas)
   map:draw()
   puzzle:draw()
